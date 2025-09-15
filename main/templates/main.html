@@ -2,5 +2,38 @@
 
 <h4>Name: </h4>
 <p>{{ name }}</p> 
+
 <h4>Class: </h4>
-<p>{{class}}</p> 
+<p>{{ class }}</p> 
+
+<a href="{% url 'main:create_product' %}">
+  <button>+ Add Product</button>
+</a>
+
+<hr>
+
+{% if not product_list %}
+<p>The product is unavailable in The Diva's Dribble.</p>
+{% else %}
+
+{% for product in product_list %} 
+<div>
+  <h2><a href="{% url 'main:show_product' product.id %}">{{ product.name }}</a></h2>
+
+  {% if product.thumbnail %}
+  <img src="{{ product.thumbnail }}" alt="thumbnail" width="150" height="100">
+  <br />
+  {% endif %}
+
+  <p><b>{{ product.get_category_display }}</b>{% if product.is_featured %} | 
+    <b>Featured</b>{% endif %} | Price: Rp {{ product.price }}</p>
+
+  <p>{{ product.description|truncatewords:25 }}...</p>
+
+  <p><a href="{% url 'main:show_product' product.id %}"><button>More Details</button></a></p>
+</div>
+
+<hr>
+{% endfor %}
+
+{% endif %}
