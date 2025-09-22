@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 **ASSIGNMENT 3**
+=======
+>>>>>>> 07dbb7ed3a0e485b665fbaf1e75bdb5971e15a7c
 1. Why do we need data delivery in implementing a platform?
     > data delivery is important because the platform doesn’t only serve HTML pages, it often needs to exchange data with other systems, apps, or even its own frontend.
 
