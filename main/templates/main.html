@@ -1,3 +1,5 @@
+{% extends 'base.html' %}
+{% block content %}
 <h1>The Diva's Dribble</h1>
 
 <h4>Name: </h4>
@@ -9,8 +11,18 @@
 <a href="{% url 'main:create_product' %}">
   <button>+ Add Product</button>
 </a>
-
+<a href="{% url 'main:logout' %}">
+  <button>Logout</button>
+</a>
+<h5>Welcome, {{ user.username }}!</br>
+  Last login session: {{ last_login }}</h5>
 <hr>
+<a href="?filter=all">
+    <button type="button">All Products</button>
+</a>
+<a href="?filter=my">
+    <button type="button">My products</button>
+</a> 
 
 {% if not product_list %}
 <p>The product is unavailable in The Diva's Dribble.</p>
@@ -37,3 +49,5 @@
 {% endfor %}
 
 {% endif %}
+
+{% endblock content %}
