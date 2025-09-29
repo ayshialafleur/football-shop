@@ -1,53 +1,71 @@
 {% extends 'base.html' %}
-{% block content %}
-<h1>The Diva's Dribble</h1>
+    {% load static %}
 
-<h4>Name: </h4>
-<p>{{ name }}</p> 
+    {% block meta %}
+    <title>The Diva's Dribble</title>
+    {% endblock meta %}
 
-<h4>Class: </h4>
-<p>{{ class }}</p> 
+    {% block content %}
+    {% include 'navbar.html' %}
 
-<a href="{% url 'main:create_product' %}">
-  <button>+ Add Product</button>
-</a>
-<a href="{% url 'main:logout' %}">
-  <button>Logout</button>
-</a>
-<h5>Welcome, {{ user.username }}!</br>
-  Last login session: {{ last_login }}</h5>
-<hr>
-<a href="?filter=all">
-    <button type="button">All Products</button>
-</a>
-<a href="?filter=my">
-    <button type="button">My products</button>
-</a> 
+            
+        <!-- Header Section -->
+        <div class="relative w-full h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden shadow-lg mt-8 mb-8">
+            <img 
+                src="{% static 'image/img-left.png' %}" 
+                alt="Diva's Dribble"
+                class="absolute inset-0 w-full h-full object-cover object-center mt-8"
+            >
+            
+            <!-- Dark overlay for text readability -->
+            <div class="absolute inset-0 bg-black bg-opacity-40"></div>
 
-{% if not product_list %}
-<p>The product is unavailable in The Diva's Dribble.</p>
-{% else %}
+            <!-- Text content -->
+            <div class="relative z-10 flex flex-col justify-center items-center text-center h-full px-6">
+                <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">Play Bold. Shop Beautiful.</h1>
+                <p class="text-white max-w-xl">Because every game deserves a <span class="text-rose-400">Diva</span> touch.</p>
+            </div>
+        </div>
 
-{% for product in product_list %} 
-<div>
-  <h2><a href="{% url 'main:show_product' product.id %}">{{ product.name }}</a></h2>
 
-  {% if product.thumbnail %}
-  <img src="{{ product.thumbnail }}" alt="thumbnail" width="150" height="100">
-  <br />
-  {% endif %}
+        <!-- Filter Section -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 bg-white rounded-lg border border-gray-200 p-4">
+          <div class="flex space-x-3 mb-4 sm:mb-0">
+            <a href="?" class="{% if request.GET.filter == 'all' or not request.GET.filter  %} bg-rose-300 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-rose-300 hover:text-white">
+              All Product
+            </a>
+            <a href="?filter=my" class="{% if request.GET.filter == 'my' %} bg-rose-300 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-rose-400 hover:text-white">
+              My Product
+            </a>
+          </div>
+          {% if user.is_authenticated %}
+            <div class="text-sm text-gray-500">
+              Last login: {{ last_login }}
+            </div>
+          {% endif %}
+        </div>
 
-  <p><b>{{ product.get_category_display }}</b>{% if product.is_featured %} | 
-    <b>Featured</b>{% endif %} | Price: Rp {{ product.price }}</p>
-
-  <p>{{ product.description|truncatewords:25 }}...</p>
-
-  <p><a href="{% url 'main:show_product' product.id %}"><button>More Details</button></a></p>
-</div>
-
-<hr>
-{% endfor %}
-
-{% endif %}
-
-{% endblock content %}
+        <!-- Product Grid -->
+        {% if not product_list %}
+          <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <div class="w-32 h-32 mx-auto mb-4">
+              <img src="{% static 'image/no-prod.png' %}" alt="No product available" class="w-full h-full object-contain">
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No product found</h3>
+            <p class="text-gray-500 mb-6">You have no product listing.</p>
+            <a href="{% url 'main:create_product' %}" class="inline-flex items-center px-4 py-2 bg-rose-300 text-white rounded-md hover:bg-rose-400 transition-colors">
+              Create Product
+            </a>
+          </div>
+        {% else %}
+          <div class="container mx-auto px-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {% for product in product_list %}
+                {% include 'card_product.html' with product=product %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endblock content %}

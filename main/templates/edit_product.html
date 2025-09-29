@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block meta %}
-<title>Create Product - The Diva's Dribble</title>
+<title>Edit Product - The Diva's Dribble</title>
 {% endblock meta %}
 
 {% block content %}
-<div class="bg-[url('{% static 'image/group1.png' %}')] w-full min-h-screen">
+<div class="bg-gray-50 w-full min-h-screen">
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- Back Navigation -->
     <div class="mb-6">
-      <a href="{% url 'main:show_main' %}" class="text-gray-800 hover:text-gray-900 font-medium transition-colors">
+      <a href="{% url 'main:show_main' %}" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
         ← Back to Home
       </a>
     </div>
@@ -18,8 +19,8 @@
     <!-- Form -->
     <div class="bg-white rounded-lg border border-gray-200 p-6 sm:p-8 form-style">
       <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Create New Product</h1>
-        <p class="text-gray-600">Add a new product to your shop listing.</p>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit Product</h1>
+        <p class="text-gray-600">Change your product listing.</p>
       </div>
       
       <form method="POST" class="space-y-6">
@@ -46,7 +47,7 @@
             Cancel
           </a>
           <button type="submit" class="order-1 sm:order-2 flex-1 bg-rose-300 text-white px-6 py-3 rounded-md font-medium hover:bg-rose-400 transition-colors">
-            Add Product to Shop
+            Change Listing
           </button>
         </div>
       </form>
