@@ -16,68 +16,160 @@
                 ← Back to Home
             </a>
         </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <svg class="animate-spin h-8 w-8 text-rose-600 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <p class="text-gray-600 mt-3">Loading product detail...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="bg-white rounded-lg border border-gray-200 p-12 text-center hidden">
+            <div class="w-16 h-16 mx-auto mb-4">
+                <div class="text-red-500 text-5xl">⚠️</div>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Failed to load product</h3>
+            <p class="text-gray-500">Please try again later.</p>
+        </div>
         
-        <!-- Article -->
-        <article class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            
-            <!-- Header -->
-            <div class="p-6 sm:p-8">
-                <div class="flex flex-wrap items-center gap-2 mb-4">
-                    <span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-rose-400 text-white">
-                        {{ product.get_category_display }}
-                    </span>
-                    {% if product.is_featured %}
-                        <span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-orange-100 text-orange-800">
-                            Featured!
-                        </span>
-                    {% endif %}
-                </div>
-                
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4">
-                    {{ product.name }}
-                </h1>
-
-                
-                <span class="inline-flex items-center px-3 py-1 rounded-xl text-lg font-semibold bg-stone-400 text-white shadow">
-                    Rp. {{ product.price|intcomma }}
-                    </span>
-
-            </div>
-
-            <!-- Featured Image -->
-            {% if product.thumbnail %}
-                <div class="px-6 sm:px-8">
-                    <img src="{{ product.thumbnail }}" 
-                         alt="{{ product.name }}" 
-                         class="w-full h-64 sm:h-80 lg:h-96 object-cover rounded-lg">
-                </div>
-            {% endif %}
-
-            <!-- Content -->
-            <div class="p-6 sm:p-8">
-                <div class="prose prose-lg max-w-none">
-                    <div class="text-gray-700 leading-relaxed whitespace-pre-line text-base sm:text-lg">
-                        {{ product.description }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Author Info -->
-            <div class="border-t border-gray-200 p-6 sm:p-8 bg-gray-50">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="font-medium text-gray-900">
-                            {% if product.user %}
-                                <p>{{ product.user.username }}</p>
-                            {% else %}
-                                <p>Anonymous</p>
-                            {% endif %}
+        <!-- Product Content -->
+                <article id="product-content" class="bg-white rounded-lg border border-gray-200 overflow-hidden hidden">
+                    <div class="flex flex-col md:flex-row">
+                        <!-- Left: Thumbnail and Seller (1/3) -->
+                        <div class="md:w-1/3 w-full flex flex-col items-center justify-start p-6 sm:p-8 border-b md:border-b-0 md:border-r border-gray-200">
+                            <div id="product-thumbnail"></div>
+                            <div class="w-full text-center mt-2">
+                                <div class="font-medium text-gray-900" id="product-seller"></div>
+                                <p class="text-sm text-gray-500">Seller</p>
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-500">Seller</p>
+                        <!-- Right: Details (2/3) -->
+                        <div class="md:w-2/3 w-full p-6 sm:p-8 flex flex-col justify-between">
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2 mb-4" id="badges-container"></div>
+                                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4" id="product-name"></h1>
+                                <span class="inline-flex items-center px-3 py-1 rounded-xl text-lg font-semibold bg-stone-400 text-white shadow mb-2" id="product-price"></span>
+                                <hr class="border-t border-gray-200 mt-2 mb-2">
+                                <div class="prose prose-lg max-w-none mt-1">
+                                    <div class="text-gray-700 leading-relaxed whitespace-pre-line text-base sm:text-lg" id="product-description"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </article>
+                </article>
     </div>
 </div>
+
+<script>
+// Configuration
+const PRODUCT_ID = "{{ product.id }}";
+const PRODUCT_DETAIL_ENDPOINT = `{% url 'main:show_json_by_id' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', PRODUCT_ID);
+
+// DOM Elements
+const loadingState = document.getElementById('loading-state');
+const errorState = document.getElementById('error-state');
+const productContent = document.getElementById('product-content');
+const productThumbnail = document.getElementById('product-thumbnail');
+const productSeller = document.getElementById('product-seller');
+const badgesContainer = document.getElementById('badges-container');
+const productName = document.getElementById('product-name');
+const productPrice = document.getElementById('product-price');
+const productDescription = document.getElementById('product-description');
+
+// Show/hide page sections
+function showState(state) {
+    loadingState.classList.toggle('hidden', state !== 'loading');
+    errorState.classList.toggle('hidden', state !== 'error');
+    productContent.classList.toggle('hidden', state !== 'ready');
+}
+
+// Get readable category name
+function getCategoryLabel(categoryCode) {
+    const categoryMapping = {
+        jersey: 'Jersey',
+        shoes: 'Football Shoes',
+        ball: 'Football',
+        equipment: 'Training Equipment',
+        accessory: 'Accessories',
+        merch: 'Merchandise',
+    };
+    return categoryMapping[categoryCode] || categoryCode;
+}
+function formatPrice(price) {
+    return 'Rp. ' + Number(price).toLocaleString('id-ID');
+}
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function renderProduct(product) {
+    // Thumbnail
+    if (product.thumbnail) {
+        productThumbnail.innerHTML = `<img src="${escapeHtml(product.thumbnail)}" alt="${escapeHtml(product.name)}" class="w-full h-64 object-cover rounded-lg mb-4">`;
+    } else {
+        productThumbnail.innerHTML = `<div class="w-full h-64 bg-gray-200 rounded-lg mb-4"></div>`;
+    }
+    // Set seller
+    productSeller.textContent = product.user_username || 'Anonymous';
+
+    // Set badges
+    badgesContainer.innerHTML = '';
+
+    // Category Badge
+    const categoryBadge = document.createElement('span');
+    categoryBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-rose-400 text-white';
+    categoryBadge.textContent = getCategoryLabel(product.category);
+    badgesContainer.appendChild(categoryBadge);
+
+    // Featured Badge
+    if (product.is_featured) {
+        const featuredBadge = document.createElement('span');
+        featuredBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-orange-100 text-orange-800';
+        featuredBadge.textContent = 'Featured!';
+        badgesContainer.appendChild(featuredBadge);
+    }
+
+    // Set name
+    productName.textContent = product.name;
+    document.title = `${product.name} - The Diva's Dribble`;
+
+    // Set price
+    productPrice.textContent = formatPrice(product.price);
+
+    // Set description
+    productDescription.textContent = product.description;
+}
+
+// Fetch product detail
+async function loadProductDetail() {
+    try {
+        showState('loading');
+
+        const productId = window.location.pathname.split('/').filter(Boolean).pop();
+
+        const response = await fetch(PRODUCT_DETAIL_ENDPOINT, { 
+            headers: { 'Accept': 'application/json' } 
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch product detail');
+        }
+
+        const productData = await response.json();
+        renderProduct(productData);
+        showState('ready');
+    } catch (error) {
+        showState('error');
+    }
+}
+
+// Initialize page
+loadProductDetail();
+</script>
+
 {% endblock content %}

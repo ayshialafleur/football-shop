@@ -6,7 +6,7 @@ class Product(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     CATEGORY_CHOICES = [
         ('jersey', 'Jersey'),
-        ('boots', 'Football Boots'),
+        ('shoes', 'Football Shoes'),
         ('ball', 'Football'),
         ('equipment', 'Training Equipment'),
         ('accessory', 'Accessories'),
@@ -22,4 +22,4 @@ class Product(models.Model):
     is_featured = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.title
+        return self.name

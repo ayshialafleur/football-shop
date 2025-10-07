@@ -15,6 +15,26 @@
         ← Back to Home
       </a>
     </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="hidden mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+      <div class="flex items-center">
+        <svg class="w-5 h-5 text-green-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-green-800 font-medium">Product updated successfully!</p>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="hidden mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+      <div class="flex items-center">
+        <svg class="w-5 h-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-red-800 font-medium" id="errorMessageText">An error occurred. Please try again.</p>
+      </div>
+    </div>
     
     <!-- Form -->
     <div class="bg-white rounded-lg border border-gray-200 p-6 sm:p-8 form-style">
@@ -23,7 +43,7 @@
         <p class="text-gray-600">Change your product listing.</p>
       </div>
       
-      <form method="POST" class="space-y-6">
+      <form id="editProductForm" class="space-y-6">
         {% csrf_token %}
         {% for field in form %}
           <div>
@@ -36,9 +56,7 @@
             {% if field.help_text %}
               <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
             {% endif %}
-            {% for error in field.errors %}
-              <p class="mt-1 text-sm text-red-600">{{ error }}</p>
-            {% endfor %}
+            <div id="error_{{ field.name }}" class="mt-1 text-sm text-red-600 hidden"></div>
           </div>
         {% endfor %}
         
@@ -46,7 +64,7 @@
           <a href="{% url 'main:show_main' %}" class="order-2 sm:order-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors text-center">
             Cancel
           </a>
-          <button type="submit" class="order-1 sm:order-2 flex-1 bg-rose-300 text-white px-6 py-3 rounded-md font-medium hover:bg-rose-400 transition-colors">
+          <button type="submit" id="submitButton" class="order-1 sm:order-2 flex-1 bg-rose-300 text-white px-6 py-3 rounded-md font-medium hover:bg-rose-400 transition-colors">
             Change Listing
           </button>
         </div>
@@ -54,4 +72,105 @@
     </div>
   </div>
 </div>
-{% endblock %}
+
+<script>
+// DOM Elements
+const editForm = document.getElementById('editProductForm');
+const submitButton = document.getElementById('submitButton');
+const successMessage = document.getElementById('successMessage');
+const errorMessage = document.getElementById('errorMessage');
+const errorMessageText = document.getElementById('errorMessageText');
+
+// Clear all error messages
+function clearErrorMessages() {
+  const errorDivs = document.querySelectorAll('[id^="error_"]');
+  errorDivs.forEach(div => {
+    div.textContent = '';
+    div.classList.add('hidden');
+  });
+  errorMessage.classList.add('hidden');
+  successMessage.classList.add('hidden');
+}
+
+// Display field-specific errors
+function displayFieldErrors(errors) {
+  Object.keys(errors).forEach(fieldName => {
+    const errorDiv = document.getElementById(`error_${fieldName}`);
+    if (errorDiv) {
+      errorDiv.textContent = errors[fieldName].join(', ');
+      errorDiv.classList.remove('hidden');
+    }
+  });
+}
+
+// Show success message
+function showSuccessMessage() {
+  successMessage.classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // Redirect to main page after 2 seconds
+  setTimeout(() => {
+    window.location.href = "{% url 'main:show_main' %}";
+  }, 2000);
+}
+
+// Show error message
+function showErrorMessage(message) {
+  errorMessageText.textContent = message;
+  errorMessage.classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Handle form submission
+async function handleFormSubmit(event) {
+  event.preventDefault();
+  
+  // Clear previous messages
+  clearErrorMessages();
+  
+  // Disable submit button
+  submitButton.disabled = true;
+  submitButton.textContent = 'Updating...';
+  
+  try {
+    // Get form data
+    const formData = new FormData(editForm);
+    
+    // Submit form via AJAX
+    const response = await fetch(editForm.action || window.location.href, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      // Success
+      showSuccessMessage();
+    } else {
+      // Validation errors
+      if (data.errors) {
+        displayFieldErrors(data.errors);
+        showErrorMessage('Please correct the errors below.');
+      } else {
+        showErrorMessage(data.message || 'An error occurred. Please try again.');
+      }
+    }
+  } catch (error) {
+    console.error('Error submitting form:', error);
+    showErrorMessage('Network error. Please check your connection and try again.');
+  } finally {
+    // Re-enable submit button
+    submitButton.disabled = false;
+    submitButton.textContent = 'Change Listing';
+  }
+}
+
+// Initialize
+editForm.addEventListener('submit', handleFormSubmit);
+</script>
+
+{% endblock content %}
